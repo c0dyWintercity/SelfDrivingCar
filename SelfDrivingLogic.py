@@ -7,7 +7,7 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 import sys
-casc_path = 'Car2.xml'
+casc_path = 'CarCascade.xml'
 car_cascade = cv2.CascadeClassifier(casc_path)
 
 
@@ -71,7 +71,7 @@ try:
 except IndexError:
     pass
     
-cap = cv2.VideoCapture('GTABike3.mov')
+cap = cv2.VideoCapture('GTATestVideo.mov')
 while cap.isOpened():
     ret, frame = cap.read()
     h, w, c = frame.shape
