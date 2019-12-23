@@ -70,7 +70,7 @@ try:
     device = int(sys.argv[1])
 except IndexError:
     pass
-    
+#cap = cv2.VideoCapture(device)
 cap = cv2.VideoCapture('GTATestVideo.mov')
 while cap.isOpened():
     ret, frame = cap.read()
