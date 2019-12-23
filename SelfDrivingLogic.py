@@ -32,13 +32,13 @@ def display_lines(frame, lines):
 
 def canny(frame):
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    blur = cv2.GaussianBlur(gray, (11, 11), 0)
+    blur = cv2.GaussianBlur(gray, (11,11), 0)
     canny = cv2.Canny(blur, 50, 150)
     return canny
             
 def roi(frame):
     height = frame.shape[0]
-    polygons = np.array([[(0, 500 ), (0, height), (1500, height), (1000, 250), (700, 250)]])    
+    polygons = np.array([[(0, 300), (0, height), (1600, height), (1000, 250), (700, 250)]])    
     mask = np.zeros_like(frame)
     cv2.fillPoly(mask, polygons, (255, 255, 255))
     masked_image = cv2.bitwise_and(frame, mask)
@@ -70,10 +70,12 @@ try:
     device = int(sys.argv[1])
 except IndexError:
     pass
-#cap = cv2.VideoCapture(device)
+#cap = cv2.VideoCapture('Turn.mp4')
 cap = cv2.VideoCapture('GTATestVideo.mov')
 while cap.isOpened():
     ret, frame = cap.read()
+    if not ret:
+        continue 
     h, w, c = frame.shape
 
     canny_image = canny(frame)
@@ -98,7 +100,7 @@ while cap.isOpened():
         continue
     
     line_image = display_lines(frame, averaged_lines)
-    comboImage = frame | line_image
+    #frame = frame | line_image
 
     for leftLine in averaged_lines:
         left_lane = []
@@ -124,61 +126,87 @@ while cap.isOpened():
             left_P = x1L, y1L, x2L, y2L = line.reshape(4)
             
             
-    try: cv2.line(comboImage, (x1R, y1R), (x2R, y2R), (0, 0, 255), 5)
+    try: 
+        cv2.line(frame, (x1R, y1R), (x2R, y2R), (0, 0, 255), 5)
     except OverflowError:
-        contiune
+        continue
+        
+        
+        
+        
+        
     try:
-        cv2.line(comboImage, (x1L, y1L), (x2L, y2L), (0, 0, 255), 5)
+        cv2.line(frame, (x1L, y1L), (x2L, y2L), (0, 0, 255), 5)
     except OverflowError:
         continue
         
     try:
-        bottom_guide = cv2.line(comboImage, (x1R, y1R), (x1L, y1L), (0, 0, 255), 5)
+        bottom_guide = cv2.line(frame, (x1R, y1R), (x1L, y1L), (0, 0, 255), 5)
     except OverflowError:
         continue
         
     try:
-        top_guide= cv2.line(comboImage, (x2R, y2R), (x2L, y2L), (0, 0, 255), 5)
+        top_guide= cv2.line(frame, (x2R, y2R), (x2L, y2L), (0, 0, 255), 5)
     except OverflowError:
         continue    
         
         
+        
+        
+        
+        
+        
+    GrayFrame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    height = frame.shape[0]
+    #print(height)
+    polygons = np.array([[(0, 375), (0, height), (1600, height), (1300, 150), (300, 175), (285, 285) ]])    
+    mask = np.zeros_like(frame)
+    cv2.fillPoly(mask, polygons, (255, 255, 255))
+    RegionedGrayFrame = cv2.bitwise_and(frame, mask)
+    #cv2.imshow('test', RegionedGrayFrame)
+            
     font = cv2.FONT_HERSHEY_COMPLEX
-    SteeringLine = cv2.line(comboImage, (int(w*.5), int(h)), (int(w*.5), int(h*.5)), (0, 255, 0), 5)
+    SteeringLine = cv2.line(frame, (int(w*.5), int(h)), (int(w*.5), int(h*.5)), (0, 255, 0), 5)
     RoadPts = np.array([[x1L, y1L], [x2L , y2L], [x2R, y2R], [x1R, y1R]], np.int32)
-    lane = cv2.polylines(comboImage, [RoadPts], True, (255, 0, 0), 10)
+    lane = cv2.polylines(frame, [RoadPts], True, (255, 0, 0), 10)
     bottomLength = x1R - x1L
     B = ((x2R-x2L)/2)+x2L
     Subtract = B - 640
     Add = 640 - B
-    if B > 640:
-        cv2.putText(comboImage, "Turn Right " + str(Subtract) + " degrees", (150, 600), font, 1, (0, 255, 0), 4)
-
-    elif B < 640:
-        cv2.putText(comboImage, "Turn Left " + str(Add) + " degrees", (800, 600), font, 1, (0, 255, 0), 4)
-
+    
    
-    GrayFrame = np.zeros_like(frame)
-    GrayFrame = cv2.cvtColor(GrayFrame, cv2.COLOR_BGR2GRAY)
     cars = car_cascade.detectMultiScale(
-        frame,
-        scaleFactor=1.1,
-        minNeighbors=5,
-        minSize=(100, 100),
-        flags=cv2.CASCADE_SCALE_IMAGE)        
+        RegionedGrayFrame,
+        #scaleFactor=1.1,
+        minNeighbors=6,
+        minSize=(1, 1))        
     for (x,y,w,h) in cars:
         BrakingDifference = y-400
         BrakingPercentage = ((BrakingDifference/400)*100)*-1
-        cv2.rectangle(comboImage,(x,y),(x+w,y+h),(0,0,255),5)
+        #cv2.rectangle(frame,(x,y),(x+w,y+h),(0,0,255),5)
         
         if y < 600:
             DistanceInFeet = (600 - y)*0.25            
-        VehicleText = cv2.putText(comboImage, "VEHICLE " + str(DistanceInFeet) + "Ft.", (x, y), font, 1, (0, 0, 255), 3)        
+        VehicleText = cv2.putText(frame, "VEHICLE " + str(DistanceInFeet) + "Ft.", (x, y), font, 1, (0, 0, 255), 3)        
         if DistanceInFeet < 100:
             BrakingPercentage = 100 - DistanceInFeet
-            cv2.putText(comboImage, "Brake " + str(BrakingPercentage) + "%", (500, 100), font, 2, (0, 0, 255), 3)
-            
-                                                        
+            cv2.putText(frame, "Brake " + str(BrakingPercentage) + "%", (500, 100), font, 2, (0, 0, 255), 3)
+
+    if B > 640:
+        cv2.putText(frame, "Turn Right " + str(Subtract) + " degrees", (150, 600), font, 1, (0, 255, 0), 4)
+
+    elif B < 640:
+        cv2.putText(frame, "Turn Left " + str(Add) + " degrees", (800, 600), font, 1, (0, 255, 0), 4)
+
+        
+        
+        
+        
+        
+        
+        
+        
+
     
     
     
@@ -186,9 +214,9 @@ while cap.isOpened():
     
     
     
-    
-    
-    
-    
-    cv2.imshow('TEST', comboImage)
-  
+    cv2.imshow('TEST', frame)
+
+
+
+
+
