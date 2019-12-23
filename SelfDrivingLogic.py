@@ -32,7 +32,7 @@ def display_lines(frame, lines):
 
 def canny(frame):
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    blur = cv2.GaussianBlur(gray, (5, 5), 0)
+    blur = cv2.GaussianBlur(gray, (11, 11), 0)
     canny = cv2.Canny(blur, 50, 150)
     return canny
             
